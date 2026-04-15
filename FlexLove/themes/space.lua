@@ -1,5 +1,5 @@
 -- The pngs are intentionally not being included, but this can still be used as a reference for how to set up a theme.
-local Color = require("libs.FlexLove").Color
+local Color = require("FlexLove.modules.Color")
 
 return {
   name = "Space Theme",
@@ -61,6 +61,6 @@ return {
   -- Define font families that can be referenced by name
   -- Paths are relative to FlexLove location or absolute
   fonts = {
-    default = "themes/space/VT323-Regular.ttf",
+    default = "themes/space/AlibabaPuHuiTi-3-105-Heavy.ttf",
   },
 }

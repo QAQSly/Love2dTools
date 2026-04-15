@@ -1,4 +1,4 @@
-local Color = require("libs.FlexLove").Color
+local Color = require("FlexLove.modules.Color")
 
 return {
   name = "Metal Theme",
@@ -76,6 +76,6 @@ return {
   -- Define font families that can be referenced by name
   -- Paths are relative to FlexLove location or absolute
   fonts = {
-    default = "themes/space/VT323-Regular.ttf",
+    default = "themes/space/AlibabaPuHuiTi-3-105-Heavy.ttf",
   },
 }
