@@ -66,7 +66,7 @@ function love.load()
     contentArea:addChild(fileStatusLabel)
     
     -- 文件内容显示
-    fileContentLabel = luis.createElement("main", "Label", "文件内容将显示在这里...", 10, 2, 1, 1)
+    fileContentLabel = luis.createElement("main", "Label", "文件内容将显示在这里...", 5, 2, 1, 1)
     contentArea:addChild(fileContentLabel)
     
     -- 启用图层
