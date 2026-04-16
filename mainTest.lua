@@ -8,14 +8,14 @@
 -- require("samples.flexContainer.main")
 --require("samples.nodegraph.main")
 -- require("samples.editor.main")
---require("samples.propertyGrid.main")
+-- require("samples.propertyGrid.main")
 
 -----------------------------------------------
 -- other Samples
 -----------------------------------------------
 --require("samples.demo_ui.main")
 -- require("samples.basic_ui.main")		-- This sample uses only the luis core library with it's own set of widgets!
---require("samples.gridLayoutTest.main")
+-- require("samples.gridLayoutTest.main")
 -- require("samples.difficulty_curve.main")
 --require("samples.demo_game.main")
 --require("samples.guess_game.main")
@@ -32,4 +32,4 @@
 -- 在游戏中可以访问这些变量
 -- droppedFilePath - 拖入的文件完整路径
 -- droppedFileContent - 拖入的文件内容
- require("my_luis_example")
+ -- require("my_luis_example")

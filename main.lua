@@ -4,7 +4,7 @@
 
 local initluis = require("luis.init")
 local luis = initluis("luis/widgets")
-
+luis.flux = require("luis.3rdparty.flux")
 -- 文件拖入变量
 local droppedFilePath = nil
 local droppedFileContent = nil
@@ -38,7 +38,7 @@ function love.load()
     
     -- 设置 LUIS 主题字体
     luis.theme.text.font = chineseFont
-    
+    luis.theme.flexContainer.padding = 2
     -- 设置网格大小
     luis.gridSize = 10
     
@@ -50,11 +50,21 @@ function love.load()
     
     -- ===== 头部 =====
     local header = luis.newFlexContainer(128, 8, 1, 1, nil, "Header")
+    local aside = luis.newFlexContainer( 12, 70, 1, 9, nil, "aside")
     mainContainer:addChild(header)
-    header:addChild(luis.createElement("main", "Label", "文件拖拽工具", 40, 2, 1, 1))
+    mainContainer:addChild(aside)
+
+    header:addChild(luis.createElement("main", "Label", "Excel转表工具", 40, 2, 1, 1))
+
+    aside:addChild(luis.createElement("main", "Button", "转表", 10, 2, function() print('Menu Item 1 - click') end, function() print('Menu Item 1 - release') end, 1, 1))
+    aside:addChild(luis.createElement("main", "Button", "转表", 10, 2, function() print('Menu Item 1 - click') end, function() print('Menu Item 1 - release') end, 1, 1))
+    aside:addChild(luis.createElement("main", "Button", "转表", 10, 2, function() print('Menu Item 1 - click') end, function() print('Menu Item 1 - release') end, 1, 1))
+    aside:addChild(luis.createElement("main", "Button", "转表", 10, 2, function() print('Menu Item 1 - click') end, function() print('Menu Item 1 - release') end, 1, 1))
+    aside:addChild(luis.createElement("main", "Button", "转表", 10, 2, function() print('Menu Item 1 - click') end, function() print('Menu Item 1 - release') end, 1, 1))
+    aside:addChild(luis.createElement("main", "Button", "转表", 10, 2, function() print('Menu Item 1 - click') end, function() print('Menu Item 1 - release') end, 1, 1))
     
     -- ===== 内容区域 =====
-    local contentArea = luis.newFlexContainer(128, 80, 1, 8, nil, "Content Area")
+    local contentArea = luis.newFlexContainer(112, 70, 20, 9, nil, "Content Area")
     mainContainer:addChild(contentArea)
     
     -- 文件拖拽区域提示
@@ -62,12 +72,23 @@ function love.load()
     contentArea:addChild(dropHint)
     
     -- 文件状态显示
-    fileStatusLabel = luis.createElement("main", "Label", fileStatusText, 10, 2, 1, 1)
+    fileStatusLabel = luis.createElement("main", "Label", fileStatusText, 30, 2, 1, 1)
     contentArea:addChild(fileStatusLabel)
     
     -- 文件内容显示
-    fileContentLabel = luis.createElement("main", "Label", "文件内容将显示在这里...", 5, 2, 1, 1)
+    fileContentLabel = luis.createElement("main", "Label", "文件内容将显示在这里...", 100, 10, 1, 1)
     contentArea:addChild(fileContentLabel)
+
+    -- Excel 列名显示
+    local editItems = {"Revert", "Insert", "Copy", "Paste", "Comment", "Block", "Reset"}
+	editFunc = function(self, item)
+		print(item)
+	end
+	-- this DropDown is placed directly ont he "main" Layer. The last two prameter specify the grid position.
+	local dropdownbox1 = luis.createElement("main", "DropDown", editItems, 1, 8, 2, editFunc, 1, 10, 4, nil, "Edit")
+    contentArea:addChild(dropdownbox1)
+
+
     
     -- 启用图层
     luis.setCurrentLayer("main")
@@ -122,7 +143,7 @@ function love.filedropped(file)
     
     if success then
         droppedFileContent = content
-        fileStatusText = "✅ 文件加载成功: " .. (#droppedFileContent) .. " 字节"
+        fileStatusText = "文件加载成功: " .. (#droppedFileContent) .. " 字节"
         
         -- 更新UI显示
         if fileStatusLabel then
@@ -146,4 +167,29 @@ function love.filedropped(file)
     end
     
     file:release()
+end
+
+
+-------------------------------
+-- 文件转表功能
+-------------------------------
+
+
+-----------------------------------
+-- csv 读取功能
+local function readCSVFile(filename)
+	local file = io.open(filename, "r")
+	if not file then
+		error("无法打开文件: " .. filename)
+	end
+	
+	local lines = {}
+	for line in file:lines() do
+		if line ~= "" then  -- 跳过空行
+			table.insert(lines, line)
+		end
+	end
+	
+	file:close()
+	return lines
 end
