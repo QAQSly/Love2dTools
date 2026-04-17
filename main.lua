@@ -2,10 +2,13 @@
 -- LUIS UI Demo - 精简版（布局 + 文件拖入 + 中文字体）
 -----------------------------------------------
 
-local initluis = require("luis.init")
+local initluis = require("luis/init")
 local luis = initluis("luis/widgets")
 luis.flux = require("luis.3rdparty.flux")
 local csv = require("sly.csv")
+
+
+
 
 ------------------------------------------
 -- 文件拖入变量
@@ -26,7 +29,7 @@ function love.load()
     love.window.setMode(luis.baseWidth, luis.baseHeight)
     
     -- ===== 中文字体设置 =====
-    local chineseFont = love.graphics.newFont("FlexLove/themes/space/AlibabaPuHuiTi-3-105-Heavy.ttf", 16)
+    local chineseFont = love.graphics.newFont("sly/AlibabaPuHuiTi-3-105-Heavy.ttf", 16)
     if not chineseFont then
         chineseFont = love.graphics.newFont(16)
     end
