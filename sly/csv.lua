@@ -86,6 +86,42 @@ function csv.readWithHeader(filename, headerRow)
     }, nil
 end
 
+--- 将带下划线的扁平 key 转换为嵌套 table
+--- 例如 "Animations_Idle" -> row["Animations"]["Idle"]
+---@param row table 原始行数据
+---@return table 转换后的嵌套表
+function csv.nestifyRow(row)
+    local result = {}
+    
+    for key, value in pairs(row) do
+        -- 查找下划线位置
+        local underscorePos = key:find("_")
+        
+        if underscorePos then
+            local parentKey = key:sub(1, underscorePos - 1)
+            local childKey = key:sub(underscorePos + 1)
+            
+            -- 确保父表存在
+            if not result[parentKey] then
+                result[parentKey] = {}
+            end
+            
+            -- 如果父表位置已被非表值占用，先保留原值
+            if type(result[parentKey]) ~= "table" then
+                local oldValue = result[parentKey]
+                result[parentKey] = { _value = oldValue }
+            end
+            
+            result[parentKey][childKey] = value
+        else
+            -- 没有下划线，直接赋值
+            result[key] = value
+        end
+    end
+    
+    return result
+end
+
 --- 将 CSV 数据转换为配置表（保持顺序）
 function csv.toConfigTable(result, keyField)
     if not result or not result.data then
@@ -98,7 +134,7 @@ function csv.toConfigTable(result, keyField)
     for _, row in ipairs(result.data) do
         local key = row[keyField]
         if key and key ~= "" then
-            config[key] = row
+            config[key] = csv.nestifyRow(row)
             table.insert(order, key)  -- 按出现顺序记录
         end
     end

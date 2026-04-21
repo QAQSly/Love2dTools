@@ -1,97 +1,111 @@
 -----------------------------------------------
--- LUIS UI Demo - 精简版（布局 + 文件拖入 + 中文字体）
+-- LUIS UI Demo - 精简版（布局 + 文件拖入 + 多语言支持）
 -----------------------------------------------
 
 local initluis = require("luis/init")
 local luis = initluis("luis/widgets")
 luis.flux = require("luis.3rdparty.flux")
 local csv = require("sly.csv")
+local i18n = require("i18n")
 
-
-
+local function getText(key)
+    return i18n:getText(key)
+end
 
 ------------------------------------------
 -- 文件拖入变量
 local droppedFilePath = nil
 local droppedFileContent = nil
-local fileStatusText = "将文件拖拽到这里..."
+local fileStatusText = getText("dragMessage")
 local currentHeaders = nil  -- 保存当前文件的表头
 
 -- 全局引用，方便更新
 local fileStatusLabel = nil
 local fileContentLabel = nil
 local columnDropdown = nil
+local langToggleBtn = nil
 
 function love.load()
     -- 设置窗口
     luis.baseWidth = 1280
     luis.baseHeight = 800
     love.window.setMode(luis.baseWidth, luis.baseHeight)
-    
-    -- ===== 中文字体设置 =====
-    local chineseFont = love.graphics.newFont("sly/AlibabaPuHuiTi-3-105-Heavy.ttf", 16)
-    if not chineseFont then
-        chineseFont = love.graphics.newFont(16)
-    end
-    
-    love.graphics.setFont(chineseFont)
-    
+
+    -- ===== 字体设置 =====
+    -- 尝试加载中文字体，失败则使用默认字体（默认字体支持英文）
+    --local customFont = love.graphics.newFont("sly/AlibabaPuHuiTi-3-105-Heavy.ttf", 16)
+    local customFont = nil
+    local font = customFont or love.graphics.newFont(16)
+
+    love.graphics.setFont(font)
+
     -- 设置 LUIS 主题字体
-    luis.theme.text.font = chineseFont
+    luis.theme.text.font = font
     luis.theme.flexContainer.padding = 2
     luis.gridSize = 10
-    
+
     -- 创建图层
     luis.newLayer("main")
-    
+
     -- 创建主容器
     local mainContainer = luis.createElement("main", "FlexContainer", 128, 80, 1, 1, nil, "Main")
-    
+
     -- ===== 头部 =====
     local header = luis.newFlexContainer(128, 8, 1, 1, nil, "Header")
     local aside = luis.newFlexContainer(12, 70, 1, 9, nil, "aside")
     mainContainer:addChild(header)
     mainContainer:addChild(aside)
 
-    header:addChild(luis.createElement("main", "Label", "Excel转表工具", 40, 2, 1, 1))
+    -- 标题 + 语言切换按钮
+    header:addChild(luis.createElement("main", "Label", getText("title"), 40, 2, 1, 1))
+
+    langToggleBtn = luis.createElement("main", "Button", getText("langToggle"), 10, 2,
+        function()
+            i18n:toggleLanguage()
+            updateUILanguage()
+        end,
+        function() end,
+        100, 1
+    )
+    header:addChild(langToggleBtn)
 
     -- 转表按钮（第一个按钮）
-    local convertButton = aside:addChild(luis.createElement("main", "Button", "转表", 10, 2, 
-        function() 
+    local convertButton = aside:addChild(luis.createElement("main", "Button", getText("convertBtn"), 10, 2,
+        function()
             print("转表按钮 - 点击")
             convertCSVToConfig()  -- 调用转换函数
-        end, 
-        function() 
+        end,
+        function()
             print("转表按钮 - 释放")
-        end, 
+        end,
         1, 1
     ))
-    
+
     -- 其他按钮（可以保留或删除）
-    aside:addChild(luis.createElement("main", "Button", "按钮2", 10, 2, function() print('按钮2点击') end, function() end, 1, 1))
-    aside:addChild(luis.createElement("main", "Button", "按钮3", 10, 2, function() print('按钮3点击') end, function() end, 1, 1))
-    aside:addChild(luis.createElement("main", "Button", "按钮4", 10, 2, function() print('按钮4点击') end, function() end, 1, 1))
-    aside:addChild(luis.createElement("main", "Button", "按钮5", 10, 2, function() print('按钮5点击') end, function() end, 1, 1))
-    aside:addChild(luis.createElement("main", "Button", "按钮6", 10, 2, function() print('按钮6点击') end, function() end, 1, 1))
-    
+    aside:addChild(luis.createElement("main", "Button", getText("btn2"), 10, 2, function() print('按钮2点击') end, function() end, 1, 1))
+    aside:addChild(luis.createElement("main", "Button", getText("btn3"), 10, 2, function() print('按钮3点击') end, function() end, 1, 1))
+    aside:addChild(luis.createElement("main", "Button", getText("btn4"), 10, 2, function() print('按钮4点击') end, function() end, 1, 1))
+    aside:addChild(luis.createElement("main", "Button", getText("btn5"), 10, 2, function() print('按钮5点击') end, function() end, 1, 1))
+    aside:addChild(luis.createElement("main", "Button", getText("btn6"), 10, 2, function() print('按钮6点击') end, function() end, 1, 1))
+
     -- ===== 内容区域 =====
     local contentArea = luis.newFlexContainer(112, 70, 20, 9, nil, "Content Area")
     mainContainer:addChild(contentArea)
-    
+
     -- 文件拖拽区域提示
-    local dropHint = luis.createElement("main", "Label", "拖拽文件到此区域", 30, 2, 1, 1)
+    local dropHint = luis.createElement("main", "Label", getText("dragHint"), 30, 2, 1, 1)
     contentArea:addChild(dropHint)
-    
+
     -- 文件状态显示
     fileStatusLabel = luis.createElement("main", "Label", fileStatusText, 30, 2, 1, 1)
     contentArea:addChild(fileStatusLabel)
-    
+
     -- 文件内容显示
-    fileContentLabel = luis.createElement("main", "Label", "文件内容将显示在这里...", 100, 10, 1, 1)
+    fileContentLabel = luis.createElement("main", "Label", getText("contentPlaceholder"), 100, 10, 1, 1)
     contentArea:addChild(fileContentLabel)
 
     -- 列名下拉列表
-    local editItems = {"请先拖拽文件"} 
+    local editItems = {getText("selectColumn")}
     editFunc = function(self, item)
         print("选中了列: " .. item)
         currentSelectedKey = item  -- 保存选中的 key
@@ -157,25 +171,25 @@ end
 ------------------------
 function convertCSVToConfig()
     if not droppedFilePath then
-        print("没有已加载的文件")
+        print(getText("noFile"))
         if fileStatusLabel then
-            fileStatusLabel:setText("❌ 请先拖拽 CSV 文件")
+            fileStatusLabel:setText(getText("noFile"))
         end
         return
     end
-    
+
     if not currentHeaders or #currentHeaders == 0 then
-        print("没有表头信息")
+        print(getText("noHeaders"))
         if fileStatusLabel then
-            fileStatusLabel:setText("❌ 无法获取表头信息")
+            fileStatusLabel:setText(getText("noHeaders"))
         end
         return
     end
-    
+
     -- 获取选中的 key 字段
     local selectedKey = getSelectedKey()
-    print("选中的 Key 字段: " .. selectedKey)
-    
+    print(getText("keyField") .. selectedKey)
+
     -- 检查选中的 key 是否在表头中
     local keyExists = false
     for _, header in ipairs(currentHeaders) do
@@ -184,27 +198,27 @@ function convertCSVToConfig()
             break
         end
     end
-    
+
     if not keyExists then
-        print("选中的字段 '" .. selectedKey .. "' 不存在于表头中")
+        print(getText("fieldNotFound") .. selectedKey)
         if fileStatusLabel then
-            fileStatusLabel:setText("❌ 选中的字段不存在: " .. selectedKey)
+            fileStatusLabel:setText(getText("fieldNotFound") .. selectedKey)
         end
         return
     end
-    
+
     -- 生成输出路径
     local fileDir = droppedFilePath:match("(.*[/\\])") or ""
     local fileName = droppedFilePath:match("([^/\\]+)%.[^%.]+$") or "Config"
     local configName = fileName:gsub("^%l", string.upper) .. "Config"
     local outputPath = fileDir .. fileName .. "Config.lua"
-    
-    print("开始转换...")
-    print("  源文件: " .. droppedFilePath)
-    print("  Key字段: " .. selectedKey)
-    print("  配置名: " .. configName)
-    print("  输出路径: " .. outputPath)
-    
+
+    print(getText("converting"))
+    print(getText("source") .. droppedFilePath)
+    print(getText("keyField") .. selectedKey)
+    print(getText("configName") .. configName)
+    print(getText("outputPath") .. outputPath)
+
     -- 执行转换
     local success, msg = csv.convertToLua(
         droppedFilePath,   -- CSV 文件路径
@@ -213,16 +227,16 @@ function convertCSVToConfig()
         outputPath,        -- 输出路径
         1                  -- 表头行号（默认 1）
     )
-    
+
     if success then
-        print("✅ 转换成功: " .. outputPath)
+        print(getText("success") .. outputPath)
         if fileStatusLabel then
-            fileStatusLabel:setText("✅ 转换成功: " .. outputPath)
+            fileStatusLabel:setText(getText("success") .. outputPath)
         end
     else
-        print("❌ 转换失败: " .. msg)
+        print(getText("error") .. msg)
         if fileStatusLabel then
-            fileStatusLabel:setText("❌ 转换失败: " .. msg)
+            fileStatusLabel:setText(getText("error") .. msg)
         end
     end
 end
@@ -232,16 +246,16 @@ end
 -----------------------------------------------
 function love.filedropped(file)
     droppedFilePath = file:getFilename()
-    
+
     -- 读取文件内容
     local success, content = pcall(function()
         return file:read()
     end)
-    
+
     if success then
         droppedFileContent = content
-        fileStatusText = "文件加载成功: " .. (#droppedFileContent) .. " 字节"
-        
+        fileStatusText = getText("fileSize") .. (#droppedFileContent) .. getText("bytes")
+
         -- 更新UI显示
         if fileStatusLabel then
             fileStatusLabel:setText(fileStatusText)
@@ -251,39 +265,54 @@ function love.filedropped(file)
             end
             fileContentLabel:setText(preview)
         end
-        
+
         print("文件加载成功: " .. droppedFilePath)
-        
+
         -- 读取 CSV 获取表头
         local lines = csv.readCSVFile(droppedFilePath)
         if lines and #lines > 0 then
             -- 解析表头（去除 BOM）
             local headers = csv.parseLine(lines[1], true)
             currentHeaders = headers
-            
+
             print("表头: " .. table.concat(headers, ", "))
-            
+
             -- 更新下拉列表
             columnDropdown:setItems(headers)
-            
+
             -- 更新状态
             if fileStatusLabel then
-                fileStatusLabel:setText("✅ 文件已加载，点击「转表」按钮生成配置")
+                fileStatusLabel:setText(getText("fileLoaded"))
             end
         else
             if fileStatusLabel then
-                fileStatusLabel:setText("❌ 文件内容为空或格式错误")
+                fileStatusLabel:setText(getText("emptyFile"))
             end
         end
-        
-        print("文件大小: " .. #droppedFileContent .. " 字节")
+
+        print(getText("fileSize") .. #droppedFileContent .. getText("bytes"))
     else
-        fileStatusText = "❌ 文件读取失败"
+        fileStatusText = getText("readError")
         if fileStatusLabel then
             fileStatusLabel:setText(fileStatusText)
         end
-        print("文件读取失败: " .. droppedFilePath)
+        print(getText("readError") .. droppedFilePath)
     end
-    
+
     file:release()
+end
+
+------------------------
+-- 更新UI语言
+------------------------
+function updateUILanguage()
+    if langToggleBtn then
+        langToggleBtn.text = getText("langToggle")
+    end
+    if fileStatusLabel then
+        fileStatusLabel:setText(getText("dragMessage"))
+    end
+    if fileContentLabel then
+        fileContentLabel:setText(getText("contentPlaceholder"))
+    end
 end
