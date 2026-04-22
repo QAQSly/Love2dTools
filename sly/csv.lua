@@ -20,6 +20,32 @@ function csv.readCSVFile(filename)
 end
 ------------------------------------
 
+--- 自动转换字符串为合适的类型（数字、布尔值等）
+---@param value string 原始字符串
+---@return any 转换后的值
+function csv.autoConvert(value)
+    -- 空字符串保持为空
+    if value == "" then
+        return ""
+    end
+    
+    -- 尝试转换为数字
+    local num = tonumber(value)
+    if num then
+        return num
+    end
+    
+    -- 尝试转换为布尔值
+    if value == "true" then
+        return true
+    elseif value == "false" then
+        return false
+    end
+    
+    -- 保持原字符串
+    return value
+end
+
 --- 解析 CSV 行为字段数组
 ---@param line string CSV 行
 ---@return table 字段数组
@@ -31,6 +57,7 @@ function csv.parseLine(line)
         if field:sub(1, 1) == '"' and field:sub(-1) == '"' then
             field = field:sub(2, -2)
         end
+        field = csv.autoConvert(field)
         table.insert(fields, field)
     end
     return fields
